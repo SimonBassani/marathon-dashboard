@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ w.name or 'Lauf' }}{% endblock %}
+{% block content %}
+<h1 class="page">{{ w.name or 'Lauf' }}</h1>
+<p class="muted">{{ w.day }}</p>
+
+<section class="card">
+  <p class="big">{{ '%.2f' % ((w.distance_m or 0) / 1000) }} km</p>
+  <div class="grid3">
+    <div><span class="k">Zeit</span><span class="v">{{ w.duration_sec | time }}</span></div>
+    <div><span class="k">Pace</span><span class="v">{% if w.distance_m and w.distance_m > 300 %}{{ (w.duration_sec / (w.distance_m / 1000)) | pace }}{% else %}–{% endif %}</span></div>
+    <div><span class="k">Puls Ø</span><span class="v">{{ '%.0f' % w.avg_hr if w.avg_hr else '–' }}</span></div>
+  </div>
+  {% if w.decoupling_pct is not none %}
+  <hr>
+  <p><strong>Aerobe Entkopplung: {{ w.decoupling_pct }} %</strong></p>
+  <p class="muted small">
+    {% if w.decoupling_pct < 5 %}
+      Unter 5 % — die Grundlagenausdauer trägt diese Dauer sauber.
+    {% else %}
+      Über 5 % — der Puls ist bei gleicher Pace nach hinten weggelaufen.
+      Das heißt: mehr ruhige Kilometer, bevor diese Distanz im Renntempo Sinn hat.
+    {% endif %}
+  </p>
+  {% endif %}
+</section>
+
+{% if laps %}
+<section class="card">
+  <h2>Splits</h2>
+  {{ lap_chart | safe }}
+  <table class="laps">
+    <thead><tr><th>km</th><th>Pace</th><th>Puls</th><th>Höhe</th></tr></thead>
+    <tbody>
+    {% for lap in laps %}
+      <tr>
+        <td>{{ lap.n }}</td>
+        <td>{{ lap.pace_s_km | pace }}</td>
+        <td>{{ lap.avg_hr or '–' }}</td>
+        <td>{% if lap.elev_gain_m %}+{{ lap.elev_gain_m }} m{% else %}–{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Wie war's?</h2>
+  <p class="muted small">Garmin misst den Puls, aber nicht, ob sich die Einheit schwer angefühlt hat.
+    Genau das braucht Claude für gute Empfehlungen.</p>
+  <form method="post" action="/lauf/{{ w.id }}/bewerten" class="rate">
+    <label for="rpe">Anstrengung (1–10)</label>
+    <input id="rpe" type="number" name="rpe" min="1" max="10" value="{{ w.rpe or '' }}">
+    <label for="feeling">Gefühl (1–10)</label>
+    <input id="feeling" type="number" name="feeling" min="1" max="10" value="{{ w.feeling or '' }}">
+    <label for="notes">Notiz</label>
+    <textarea id="notes" name="notes" rows="3" maxlength="2000">{{ w.notes or '' }}</textarea>
+    <button type="submit">Speichern</button>
+  </form>
+</section>
+{% endblock %}

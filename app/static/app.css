@@ -1,0 +1,201 @@
+/* Mobile zuerst. Das Ding wird zu 90 % am Handy geöffnet, meistens verschwitzt
+   und einhändig — deshalb große Zahlen, dicke Tap-Ziele, dunkler Hintergrund. */
+:root {
+  color-scheme: dark;
+  --bg: #0f1115;
+  --card: #171a21;
+  --line: #252a34;
+  --ink: #e7e9ee;
+  --muted: #8b93a1;
+  --accent: #ff5a1f;
+  --ok: #35c07f;
+  --warn: #ffb020;
+  --bad: #ff5f56;
+  --r: 14px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 0 calc(72px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body.centered { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+
+main { padding: 12px 14px 24px; max-width: 720px; margin: 0 auto; }
+
+.top {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  background: rgba(15, 17, 21, .88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 700; letter-spacing: .3px; }
+
+h1.page { font-size: 1.4rem; margin: 6px 2px 12px; }
+h2 { font-size: .95rem; margin: 0 0 10px; color: var(--muted); font-weight: 600;
+     text-transform: uppercase; letter-spacing: .06em; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.stack > * { margin-bottom: 8px; }
+
+/* Der Countdown ist das Erste, was er sehen will. */
+.hero { text-align: center; padding: 22px 16px; }
+.eyebrow { margin: 0; color: var(--muted); font-size: .85rem; }
+.countdown { margin: 6px 0 4px; font-size: 1rem; color: var(--muted); }
+.countdown strong { display: block; font-size: 3.4rem; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.phase { margin: 8px 0 0; font-size: .9rem; color: var(--muted); }
+
+.big { font-size: 2.4rem; font-weight: 700; margin: 0 0 2px; font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.verdict { margin: 10px 0 0; font-size: .92rem; }
+
+.grid2, .grid3 { display: grid; gap: 10px; margin-top: 12px; }
+.grid2 { grid-template-columns: 1fr 1fr; }
+.grid3 { grid-template-columns: repeat(3, 1fr); }
+.grid2 > div, .grid3 > div { background: #0e1116; border-radius: 10px; padding: 10px; }
+.k { display: block; font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.v { display: block; font-size: 1.1rem; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.v em { font-style: normal; font-size: .8rem; }
+.v em.up { color: var(--ok); }
+.v em.down { color: var(--warn); }
+
+hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
+
+/* Die SVGs strecken sich (preserveAspectRatio="none"), deshalb MUSS die Höhe
+   hier festgelegt werden — sonst leitet der Browser sie aus dem viewBox-
+   Verhältnis ab und das Diagramm wird auf dem Handy meterhoch.
+   Beschriftungen stehen als HTML daneben, nicht im SVG: gestreckter SVG-Text
+   sieht zerquetscht aus. */
+.chart-wrap { margin: 0 0 4px; }
+.chart { width: 100%; display: block; }
+.chart-bars { height: 132px; }
+.chart-line { height: 96px; }
+.chart-laps { height: 104px; }
+.chart-top { margin: 0 0 6px; font-size: .74rem; color: var(--muted); }
+.chart-axis { display: flex; justify-content: space-between; margin-top: 6px;
+              font-size: .74rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chart-axis span:last-child { color: var(--ink); }
+.chart-empty { margin: 10px 0; font-size: .85rem; color: var(--muted); }
+
+.bar { height: 8px; border-radius: 999px; background: #0e1116; overflow: hidden; margin: 10px 0 6px; }
+.bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+.alert { border-radius: 12px; padding: 12px 14px; border: 1px solid var(--line); background: var(--card); }
+.alert strong { display: block; margin-bottom: 2px; }
+.alert span { font-size: .88rem; color: var(--muted); }
+.alert.hoch { border-left: 4px solid var(--bad); }
+.alert.mittel { border-left: 4px solid var(--warn); }
+.alert.info { border-left: 4px solid var(--muted); }
+
+/* Einheiten-Liste, geteilt von Startseite und Plan */
+.sessions { list-style: none; margin: 0; padding: 0; }
+.sessions li {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 0; border-top: 1px solid var(--line);
+}
+.sessions li:first-child { border-top: 0; }
+.sessions .day { min-width: 46px; color: var(--muted); font-size: .82rem; padding-top: 2px; font-variant-numeric: tabular-nums; }
+.sessions .body { flex: 1; }
+.sessions .body strong { display: block; font-size: .95rem; font-weight: 600; }
+.sessions .body em { display: block; font-style: normal; font-size: .82rem; color: var(--muted); margin-top: 2px; }
+.sessions li.today .body strong { color: var(--accent); }
+.sessions li.s-done { opacity: .55; }
+.sessions li.s-skipped .body strong { text-decoration: line-through; opacity: .7; }
+/* Farbcode nach Einheitstyp — man erkennt die Woche auf einen Blick. */
+.sessions li.k-long .day { color: var(--accent); }
+.sessions li.k-interval .day, .sessions li.k-tempo .day { color: var(--warn); }
+.sessions li.k-rest .day, .sessions li.k-recovery .day { color: var(--ok); }
+
+.tag { font-size: .74rem; padding: 3px 8px; border-radius: 999px; background: #0e1116;
+       color: var(--muted); white-space: nowrap; }
+.tag.ok { color: var(--ok); }
+.tag.miss { color: var(--bad); }
+.tags { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+
+.week header { display: flex; align-items: center; justify-content: space-between; }
+.week header h2 { margin: 0; }
+
+.runlist { list-style: none; margin: 0; padding: 0; }
+.runlist li { margin-bottom: 8px; }
+.runlist a {
+  display: flex; gap: 12px; align-items: center; text-decoration: none; color: inherit;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+}
+.runlist .date { color: var(--muted); font-size: .82rem; min-width: 46px; font-variant-numeric: tabular-nums; }
+.runlist .main { flex: 1; min-width: 0; }
+.runlist .main strong { display: block; font-size: .95rem; }
+.runlist .main em { display: block; font-style: normal; font-size: .8rem; color: var(--muted);
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.runlist .meta { text-align: right; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.runlist .meta .muted { display: block; font-size: .74rem; }
+
+table.laps { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
+table.laps th { text-align: left; color: var(--muted); font-weight: 500; font-size: .76rem;
+                text-transform: uppercase; letter-spacing: .05em; padding-bottom: 6px; }
+table.laps td { padding: 6px 0; border-top: 1px solid var(--line); }
+
+.notes { list-style: none; margin: 0; padding: 0; font-size: .9rem; }
+.notes li { padding: 8px 0; border-top: 1px solid var(--line); }
+.notes li:first-child { border-top: 0; }
+.notes .date { color: var(--muted); margin-right: 8px; font-size: .8rem; }
+.notes li.client { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.notes li.client form { margin: 0; }
+.ghost.danger { color: var(--bad); border-color: var(--bad); }
+
+.code { background: #0e1116; border: 1px solid var(--line); border-radius: 10px;
+        padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: .85rem; word-break: break-all; }
+
+/* Formulare */
+form.rate label, .login label { display: block; font-size: .8rem; color: var(--muted); margin: 12px 0 6px; }
+input, textarea, select {
+  width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: #0e1116; color: var(--ink); font-size: 1rem; font-family: inherit;
+}
+button, .ghost {
+  display: inline-block; margin-top: 14px; padding: 12px 16px; border: 0; border-radius: 10px;
+  background: var(--accent); color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer;
+  text-decoration: none; text-align: center; font-family: inherit;
+}
+.ghost { margin: 0; padding: 8px 12px; font-size: .85rem; background: transparent;
+         border: 1px solid var(--line); color: var(--muted); }
+.ghost.block { display: block; margin-top: 8px; }
+.top form { margin: 0; }
+.err { color: var(--bad); font-size: .85rem; margin-top: 12px; }
+.login { width: 100%; max-width: 360px; }
+.login h1 { font-size: 1.25rem; margin: 0 0 4px; }
+.footer { text-align: center; margin: 18px 0 0; }
+
+/* Tab-Leiste unten — Daumen-erreichbar */
+.tabs {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  background: rgba(15, 17, 21, .95);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tabs a {
+  padding: 12px 4px; text-align: center; text-decoration: none;
+  color: var(--muted); font-size: .74rem; font-weight: 500;
+}
+.tabs a.on { color: var(--accent); }
+
+@media (min-width: 640px) {
+  .countdown strong { font-size: 4rem; }
+  main { padding-top: 20px; }
+}

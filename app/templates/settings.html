@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Setup{% endblock %}
+{% block content %}
+<h1 class="page">Setup</h1>
+{% if saved == 'ok' %}<p class="alert info"><strong>Gespeichert.</strong></p>{% endif %}
+{% if saved == 'entzogen' %}<p class="alert info"><strong>Zugang entzogen.</strong></p>{% endif %}
+{% if saved == 'kein-rennen' %}<p class="alert hoch"><strong>Erst ein Rennen anlegen.</strong></p>{% endif %}
+
+<section class="card">
+  <h2>Zielrennen</h2>
+  <form method="post" action="/einstellungen/rennen" class="rate">
+    <label for="name">Name</label>
+    <input id="name" name="name" value="{{ race.name if race else '' }}" required>
+    <label for="day">Renntag</label>
+    <input id="day" name="day" type="date" value="{{ race.day if race else '' }}" required>
+    <label for="goal_time">Zielzeit (z. B. 3:45)</label>
+    <input id="goal_time" name="goal_time" value="{{ race.goal_time_sec | time if race and race.goal_time_sec else '' }}">
+    <label for="distance_km">Distanz in km</label>
+    <input id="distance_km" name="distance_km" type="number" step="0.001" value="{{ race.distance_km if race else 42.195 }}">
+    <button type="submit">Rennen speichern</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Trainingsplan erzeugen</h2>
+  <p class="muted small">Erzeugt einen periodisierten Plan bis zum Renntag: Grundlage, Aufbau,
+    Peak, Taper — mit Entlastungswoche in jeder vierten Woche. Bestehende selbst
+    geplante Einheiten bleiben erhalten.</p>
+  <form method="post" action="/einstellungen/plan" class="rate">
+    <label for="weekly_km">Aktueller Wochenumfang (km)</label>
+    <input id="weekly_km" name="weekly_km" type="number" step="0.5" value="30" required>
+    <label for="run_days">Lauftage</label>
+    <input id="run_days" name="run_days" value="di,do,sa,so">
+    <label for="peak_km">Maximaler Wochenumfang (leer = automatisch)</label>
+    <input id="peak_km" name="peak_km" type="number" step="0.5">
+    <button type="submit">Plan erzeugen</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Claude verbinden</h2>
+  <p class="muted small">In Claude unter <em>Einstellungen → Connectors → Connector hinzufügen</em>
+    diese Adresse eintragen:</p>
+  <p class="code">{{ public_url }}/mcp</p>
+  <p class="muted small">Claude fragt danach einmalig nach dem Dashboard-Passwort.
+    Danach kannst du im Chat direkt nach deinem Trainingsstand fragen.</p>
+  {% if clients %}
+  <hr>
+  <p class="muted small">Verbundene Clients. Erkennst du einen nicht wieder, entzieh ihm
+    den Zugang — das wirkt sofort, auch auf bereits ausgestellte Tokens.</p>
+  <ul class="notes">
+    {% for c in clients %}
+    <li class="client">
+      <span><span class="date">{{ c.created_at[:10] }}</span> {{ c.client_name }}</span>
+      <form method="post" action="/einstellungen/client-entziehen">
+        <input type="hidden" name="client_id" value="{{ c.client_id }}">
+        <button class="ghost danger" type="submit">Entziehen</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Abmelden</h2>
+  <p><a class="ghost block" href="/logout">Abmelden</a></p>
+</section>
+{% endblock %}

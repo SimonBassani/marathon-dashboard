@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/static/app.css">
+<title>Anmelden · Marathon-Dashboard</title>
+</head>
+<body class="centered">
+<form method="post" action="/login" class="card login">
+  <h1>Marathon-Dashboard</h1>
+  <p class="muted">Bitte mit dem Dashboard-Passwort anmelden.</p>
+  <label for="pw">Passwort</label>
+  <input id="pw" type="password" name="password" autocomplete="current-password" autofocus required>
+  <input type="hidden" name="next" value="{{ next }}">
+  <button type="submit">Anmelden</button>
+  {% if error %}<p class="err">{{ error }}</p>{% endif %}
+</form>
+</body>
+</html>

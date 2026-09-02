@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Körper{% endblock %}
+{% block content %}
+<h1 class="page">Körper</h1>
+<p class="muted small">Letzte {{ days }} Tage. Die kräftige Linie ist das 7-Tage-Mittel —
+  darauf schauen, nicht auf den einzelnen Tag.</p>
+
+{% for key, svg in charts.items() %}
+<section class="card">
+  <h2>{{ {'hrv_overnight': 'HRV über Nacht', 'rhr': 'Ruhepuls', 'sleep_minutes': 'Schlaf (Minuten)', 'training_readiness': 'Readiness', 'vo2max': 'VO2max'}[key] }}</h2>
+  {{ svg | safe }}
+</section>
+{% endfor %}
+
+{% if notes %}
+<section class="card">
+  <h2>Trainingstagebuch</h2>
+  <ul class="notes">
+    {% for n in notes %}
+    <li><span class="date">{{ n.day[8:10] }}.{{ n.day[5:7] }}.</span> {{ n.text }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Form{% endblock %}
+{% block headeraction %}
+<form method="post" action="/sync" id="syncform"><button class="ghost" type="submit">Aktualisieren</button></form>
+{% endblock %}
+
+{% block content %}
+{% if s.race %}
+<section class="card hero">
+  <p class="eyebrow">{{ s.race.name }} · {{ s.race.day }}</p>
+  <p class="countdown"><strong>{{ s.days_to_race }}</strong> Tage</p>
+  <p class="phase">{{ s.phase }} — {{ s.phase_hint }}</p>
+</section>
+{% else %}
+<section class="card hero">
+  <p class="eyebrow">Kein Rennen hinterlegt</p>
+  <p class="phase">Unter <a href="/einstellungen">Setup</a> den Renntag und die Zielzeit eintragen — danach rechnet alles darauf hin.</p>
+</section>
+{% endif %}
+
+{% if s.warnings %}
+<section class="stack">
+  {% for w in s.warnings %}
+  <div class="alert {{ w.level }}">
+    <strong>{{ w.title }}</strong>
+    <span>{{ w.text }}</span>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Prognose</h2>
+  <p class="big">{{ s.prediction.combined_sec | time }}</p>
+  <p class="muted small">Verlässlichkeit: {{ s.prediction.confidence }} ·
+    längster Lauf 90 Tage: {{ s.prediction.longest_run_km }} km</p>
+  <div class="grid2">
+    <div><span class="k">Garmin</span><span class="v">{{ s.prediction.garmin_sec | time }}</span></div>
+    <div><span class="k">Aus echten Läufen</span><span class="v">{{ s.prediction.riegel_sec | time }}</span></div>
+  </div>
+  {% if s.goal %}
+  <hr>
+  <div class="grid2">
+    <div><span class="k">Zielzeit</span><span class="v">{{ s.goal.goal_sec | time }}</span></div>
+    <div><span class="k">Zielpace</span><span class="v">{{ s.goal.goal_pace_s_km | pace }}</span></div>
+  </div>
+  <p class="verdict">{{ s.goal.verdict }}</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Wochenumfang</h2>
+  {{ chart | safe }}
+  <div class="grid3">
+    <div><span class="k">Diese Woche</span><span class="v">{{ s.this_week_km }} km</span></div>
+    <div><span class="k">Vorwoche</span><span class="v">{{ s.last_week_km }} km</span></div>
+    <div><span class="k">Ø 4 Wochen</span><span class="v">{{ s.avg_4w_km }} km</span></div>
+  </div>
+  <div class="grid3">
+    <div><span class="k">Steigerung</span><span class="v">{% if s.ramp_pct is not none %}{{ '%+.1f' % s.ramp_pct }} %{% else %}–{% endif %}</span></div>
+    <div><span class="k">ACWR</span><span class="v">{{ s.acwr if s.acwr is not none else '–' }}</span></div>
+    <div><span class="k">Längster (4 W.)</span><span class="v">{{ s.longest_4w_km }} km</span></div>
+  </div>
+  {% if s.intensity %}
+  <div class="bar" role="img" aria-label="Intensitätsverteilung">
+    <span style="width: {{ s.intensity.easy_pct }}%"></span>
+  </div>
+  <p class="muted small">{{ s.intensity.easy_pct }} % locker / {{ s.intensity.hard_pct }} % hart
+    über {{ s.intensity.hours }} h — angestrebt sind rund 80/20.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Als Nächstes</h2>
+  {% if today_sessions %}
+  <ul class="sessions">
+    {% for t in today_sessions %}
+    <li class="k-{{ t.kind }}">
+      <span class="day">{{ t.day[8:10] }}.{{ t.day[5:7] }}.</span>
+      <span class="body">
+        <strong>{{ t.title }}</strong>
+        {% if t.description %}<em>{{ t.description }}</em>{% endif %}
+      </span>
+      {% if t.target_pace_s %}<span class="tag">{{ t.target_pace_s | pace }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Nichts geplant. Unter <a href="/einstellungen">Setup</a> einen Plan erzeugen —
+    oder Claude fragen: „plan mir die Woche".</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Körper</h2>
+  <div class="grid3">
+    <div><span class="k">VO2max</span><span class="v">{{ '%.0f' % s.vo2max if s.vo2max else '–' }}</span></div>
+    <div><span class="k">Readiness</span><span class="v">{{ '%.0f' % s.readiness if s.readiness else '–' }}</span></div>
+    <div><span class="k">Schlaf Ø</span><span class="v">{% if s.sleep_trend %}{{ '%.1f' % (s.sleep_trend.recent / 60) }} h{% else %}–{% endif %}</span></div>
+  </div>
+  <div class="grid2">
+    <div><span class="k">HRV</span><span class="v">{% if s.hrv_trend %}{{ s.hrv_trend.recent }} <em class="{{ 'up' if s.hrv_trend.delta_pct >= 0 else 'down' }}">{{ '%+.0f' % s.hrv_trend.delta_pct }} %</em>{% else %}–{% endif %}</span></div>
+    <div><span class="k">Ruhepuls</span><span class="v">{% if s.rhr_trend %}{{ s.rhr_trend.recent }} <em class="{{ 'down' if s.rhr_trend.delta_pct <= 0 else 'up' }}">{{ '%+.0f' % s.rhr_trend.delta_pct }} %</em>{% else %}–{% endif %}</span></div>
+  </div>
+</section>
+
+<p class="footer muted small">
+  {% if last_sync %}Letzter Sync: {{ last_sync.started_at }} —
+  {{ 'ok' if last_sync.ok else 'fehlgeschlagen' }}{% if last_sync.error %} ({{ last_sync.error }}){% endif %}
+  {% else %}Noch kein Sync gelaufen.{% endif %}
+</p>
+{% endblock %}
+
+{% block scripts %}<script src="/static/app.js"></script>{% endblock %}

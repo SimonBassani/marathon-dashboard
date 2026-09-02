@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Läufe{% endblock %}
+{% block content %}
+<h1 class="page">Läufe</h1>
+{% if not runs %}
+<p class="card muted">Noch keine Läufe in der Datenbank. Prüfe unter Setup, ob der Garmin-Sync läuft.</p>
+{% endif %}
+<ul class="runlist">
+  {% for r in runs %}
+  <li>
+    <a href="/lauf/{{ r.id }}">
+      <span class="date">{{ r.day[8:10] }}.{{ r.day[5:7] }}.</span>
+      <span class="main">
+        <strong>{{ r.km }} km · {{ r.duration_sec | time }}</strong>
+        <em>{{ r.name or 'Lauf' }}</em>
+      </span>
+      <span class="meta">
+        <span>{{ r.pace_s_km | pace }}</span>
+        <span class="muted">{% if r.avg_hr %}{{ r.avg_hr }} bpm{% endif %}
+          {%- if r.decoupling_pct is not none %} · Entk. {{ r.decoupling_pct }} %{% endif %}</span>
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

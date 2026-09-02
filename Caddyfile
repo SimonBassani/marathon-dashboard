@@ -1,0 +1,26 @@
+# Caddy holt und erneuert das Let's-Encrypt-Zertifikat von selbst.
+# Voraussetzung: DOMAIN zeigt per A-Record auf diesen Server, Port 80 und 443 offen.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# MCP-Streams laufen lange. Ohne diese Timeouts bricht Caddy sie ab.
+	reverse_proxy app:8000 {
+		flush_interval -1
+		transport http {
+			read_timeout 10m
+			write_timeout 10m
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

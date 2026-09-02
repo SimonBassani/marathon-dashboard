@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/app.css">
+<title>{% block title %}Marathon{% endblock %} · Marathon-Dashboard</title>
+</head>
+<body>
+<header class="top">
+  <span class="brand">Marathon</span>
+  {% block headeraction %}{% endblock %}
+</header>
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<nav class="tabs">
+  <a href="/" class="{{ 'on' if nav == 'home' }}">Form</a>
+  <a href="/plan" class="{{ 'on' if nav == 'plan' }}">Plan</a>
+  <a href="/laeufe" class="{{ 'on' if nav == 'runs' }}">Läufe</a>
+  <a href="/gesundheit" class="{{ 'on' if nav == 'health' }}">Körper</a>
+  <a href="/einstellungen" class="{{ 'on' if nav == 'settings' }}">Setup</a>
+</nav>
+{% block scripts %}{% endblock %}
+</body>
+</html>

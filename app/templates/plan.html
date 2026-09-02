@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Plan{% endblock %}
+{% block content %}
+<h1 class="page">Trainingsplan</h1>
+{% if not by_week %}
+<p class="card muted">Noch kein Plan. Unter <a href="/einstellungen">Setup</a> einen erzeugen —
+  oder Claude im Chat bitten: „generier mir den Plan bis zum Marathon".</p>
+{% endif %}
+
+{% for ws, sessions in by_week.items() %}
+{% set c = compare[ws] %}
+<section class="card week">
+  <header>
+    <h2>Woche ab {{ ws[8:10] }}.{{ ws[5:7] }}.</h2>
+    <span class="tag">{{ c.actual_km }} / {{ c.planned_km }} km</span>
+  </header>
+  <div class="bar" role="img" aria-label="Fortschritt der Woche">
+    <span style="width: {{ [100, (c.actual_km / c.planned_km * 100) if c.planned_km else 0] | min }}%"></span>
+  </div>
+  <ul class="sessions">
+    {% for t in sessions %}
+    <li class="k-{{ t.kind }} s-{{ t.status }} {{ 'today' if t.day == today }}">
+      <span class="day">{{ t.day[8:10] }}.{{ t.day[5:7] }}.</span>
+      <span class="body">
+        <strong>{{ t.title }}</strong>
+        {% if t.description %}<em>{{ t.description }}</em>{% endif %}
+      </span>
+      <span class="tags">
+        {% if t.target_pace_s %}<span class="tag">{{ t.target_pace_s | pace }}</span>{% endif %}
+        {% if t.status == 'done' %}<span class="tag ok">erledigt</span>
+        {% elif t.status == 'skipped' %}<span class="tag miss">ausgefallen</span>{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endfor %}
+{% endblock %}

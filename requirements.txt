@@ -1,0 +1,15 @@
+# Exakt gepinnt, bewusst. Ein "^"-Bereich plus alter Lockfile ist die häufigste
+# Ursache für "wir dachten, wir wären aktuell". Anheben passiert absichtlich:
+#   pip install --upgrade <paket> && pip-audit
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+jinja2==3.1.6
+python-multipart==0.0.32
+pydantic==2.13.5
+
+# MCP über Streamable HTTP
+fastmcp==3.4.7
+
+# Garmin Connect (inoffiziell, aber die einzige praktikable Quelle)
+garminconnect==0.3.11
+python-dateutil==2.9.0.post0

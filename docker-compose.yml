@@ -1,0 +1,66 @@
+# Zwei Container: die App und Caddy für HTTPS.
+#
+# Die Härtung ist nicht Zierde. Auf einem öffentlich erreichbaren Server ist ein
+# read-only Dateisystem plus noexec-tmpfs der Unterschied zwischen "ein Angreifer
+# hat kurz Code ausgeführt" und "ein Miner läuft seit drei Wochen".
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      TZ: ${TZ:-Europe/Vienna}
+      DB_PATH: /data/marathon.db
+      GARMIN_TOKEN_STORE: /data/garth
+      # Nur Caddy im internen Docker-Netz darf X-Forwarded-For setzen. Ohne diese
+      # Einschränkung könnte jeder Aufrufer seine eigene IP-Adresse angeben und
+      # damit die Sperre nach zu vielen Fehlversuchen umgehen.
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-172.16.0.0/12,192.168.0.0/16,10.0.0.0/8}
+    volumes:
+      - data:/data
+    # Nur /data ist beschreibbar. Alles andere bleibt unveränderlich.
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    cpus: 1.0
+    expose: ["8000"]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5).status == 200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN fehlt in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    cap_drop: [ALL]
+    # Caddy braucht genau dieses eine Recht, um auf Port 80/443 zu lauschen.
+    cap_add: [NET_BIND_SERVICE]
+    security_opt:
+      - no-new-privileges:true
+    depends_on: [app]
+    networks: [internal]
+
+networks:
+  internal:
+
+volumes:
+  data:
+  caddy-data:
+  caddy-config:
