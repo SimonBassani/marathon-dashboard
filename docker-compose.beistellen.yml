@@ -1,0 +1,72 @@
+# Variante für einen VPS, auf dem schon etwas anderes mit Caddy läuft.
+#
+# Unterschied zum normalen docker-compose.yml: KEIN eigenes Caddy und KEINE
+# Ports auf 80/443. Stattdessen hängt sich der App-Container in das bereits
+# vorhandene Docker-Netz, und der dort laufende Reverse-Proxy holt ihn per
+# Container-Namen ab. So kommen sich die beiden Projekte nicht in die Quere.
+#
+# Aufruf über scripts/vps-beistellen.sh — das setzt auch das Netz richtig.
+# Von Hand:
+#
+#   docker compose -f docker-compose.beistellen.yml -p marathon up -d --build
+#
+# Danach im Caddyfile des anderen Projekts ergänzen:
+#
+#   marathon.deine-domain.at {
+#       reverse_proxy marathon-app:8000 {
+#           flush_interval -1
+#           transport http { read_timeout 10m  write_timeout 10m }
+#       }
+#   }
+
+services:
+  app:
+    build: .
+    # Fester Name, weil der fremde Reverse-Proxy ihn so anspricht.
+    container_name: marathon-app
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      TZ: ${TZ:-Europe/Vienna}
+      DB_PATH: /data/marathon.db
+      GARMIN_TOKEN_STORE: /data/garth
+      # Der fremde Caddy sitzt im selben Docker-Netz. Nur von dort wird
+      # X-Forwarded-For geglaubt — sonst könnte jeder Aufrufer seine eigene
+      # Absender-IP behaupten und die Login-Sperre umgehen.
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-172.16.0.0/12,192.168.0.0/16,10.0.0.0/8}
+    volumes:
+      - data:/data
+
+    # Dieselbe Härtung wie im Hauptstack. Ein öffentlich erreichbarer Container
+    # ohne read-only Dateisystem ist der Unterschied zwischen "kurz Code
+    # ausgeführt" und "Miner läuft seit drei Wochen".
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    cpus: 1.0
+
+    # Bewusst kein "ports:" — von außen ist der Container nicht erreichbar,
+    # nur über den Reverse-Proxy im selben Netz.
+    expose: ["8000"]
+    networks: [fremd]
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5).status == 200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  # Das Netz gehört dem anderen Projekt und wird hier nur mitbenutzt, nicht
+  # angelegt. Name kommt aus FREMDES_NETZ (siehe scripts/vps-beistellen.sh).
+  fremd:
+    external: true
+    name: ${FREMDES_NETZ:?FREMDES_NETZ fehlt — z.B. dashboard_internal}
+
+volumes:
+  data:
