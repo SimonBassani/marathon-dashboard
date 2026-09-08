@@ -94,6 +94,31 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
 .bar { height: 8px; border-radius: 999px; background: #0e1116; overflow: hidden; margin: 10px 0 6px; }
 .bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
 
+/* --- Wochenansicht auf der Startseite ------------------------------------ */
+.wochen-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.wochen-kopf .pill {
+  font-size: .8rem; color: var(--muted); background: #0e1116;
+  border-radius: 999px; padding: 4px 10px; font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.wochentage {
+  list-style: none; margin: 12px 0 4px; padding: 0;
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+}
+.wochentage li {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 2px 10px; border-radius: 10px; background: #0e1116;
+  border: 1px solid transparent; min-height: 62px;
+}
+.wochentage li.vorbei { opacity: .5; }
+.wochentage li.heute { border-color: var(--accent); opacity: 1; }
+.wochentage .wd { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.wochentage .dn { font-size: .95rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wochentage li.heute .dn { color: var(--accent); }
+.wochentage .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--muted); }
+.wochentage .dot.erledigt { background: var(--ok); }
+.wochentage li.leer .dn { color: var(--muted); font-weight: 400; }
+
 .alert { border-radius: 12px; padding: 12px 14px; border: 1px solid var(--line); background: var(--card); }
 .alert strong { display: block; margin-bottom: 2px; }
 .alert span { font-size: .88rem; color: var(--muted); }
@@ -195,7 +220,81 @@ button, .ghost {
 }
 .tabs a.on { color: var(--accent); }
 
+/* --- Bewegung -------------------------------------------------------------
+   Zurückhaltend und kurz: Karten kommen beim Laden gestaffelt herein, Balken
+   wachsen auf ihren Wert, Berührungen geben Rückmeldung. Nichts davon darf den
+   Blick vom Inhalt wegziehen — es geht um Orientierung, nicht um Effekt.
+   Wer im System "Bewegung reduzieren" gesetzt hat, bekommt am Ende der Datei
+   alles davon abgeschaltet. */
+
+@keyframes karte-rein {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+main > .card, main > section {
+  animation: karte-rein .38s cubic-bezier(.22, .9, .3, 1) backwards;
+}
+/* Gestaffelt, damit die Seite sich aufbaut statt zu blinken. Nach der sechsten
+   Karte bringt weiteres Verzögern nichts mehr — der Rest liegt ohnehin
+   unterhalb des Bildschirms. */
+main > *:nth-child(1) { animation-delay: .02s; }
+main > *:nth-child(2) { animation-delay: .07s; }
+main > *:nth-child(3) { animation-delay: .12s; }
+main > *:nth-child(4) { animation-delay: .17s; }
+main > *:nth-child(5) { animation-delay: .22s; }
+main > *:nth-child(n+6) { animation-delay: .26s; }
+
+/* Fortschrittsbalken wachsen von links auf ihren Wert. */
+@keyframes balken-auf { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.bar span { transform-origin: left center; animation: balken-auf .7s .25s cubic-bezier(.22, .9, .3, 1) backwards; }
+
+/* Säulen des Wochenumfang-Diagramms von unten hoch. */
+@keyframes saeule-auf { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.chart rect { transform-origin: bottom; animation: saeule-auf .5s cubic-bezier(.22, .9, .3, 1) backwards; }
+.chart rect:nth-of-type(n+2) { animation-delay: .03s; }
+.chart rect:nth-of-type(n+5) { animation-delay: .07s; }
+.chart rect:nth-of-type(n+9) { animation-delay: .11s; }
+
+/* Rückmeldung auf Berührung — am Handy der einzige Beleg, dass etwas ankam. */
+button, .tabs a, .sessions li a, .runs li a {
+  transition: transform .12s ease, background-color .16s ease, color .16s ease, opacity .16s ease;
+}
+button:active { transform: scale(.96); }
+.tabs a:active { opacity: .6; }
+.wochentage li { transition: border-color .16s ease, background-color .16s ease; }
+
+/* Die Sync-Meldung schiebt sich herein statt aufzupoppen. */
+@keyframes meldung-rein {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+.syncmeldung .alert { animation: meldung-rein .26s cubic-bezier(.22, .9, .3, 1); }
+
+/* Sync-Rückmeldung: sitzt über der Tab-Leiste, damit sie nichts verdeckt, und
+   ist breitenbegrenzt wie der übrige Inhalt. */
+.syncmeldung {
+  position: fixed; z-index: 11;
+  left: 12px; right: 12px;
+  bottom: calc(58px + env(safe-area-inset-bottom));
+  margin: 0 auto; max-width: 640px;
+}
+.syncmeldung .alert {
+  background: var(--card);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
+}
+
 @media (min-width: 640px) {
   .countdown strong { font-size: 4rem; }
   main { padding-top: 20px; }
+}
+
+/* Wer im Betriebssystem "Bewegung reduzieren" eingeschaltet hat, meint es ernst.
+   Alles abschalten statt nur verkürzen — die Endzustände stimmen ohnehin. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

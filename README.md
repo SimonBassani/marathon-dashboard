@@ -14,6 +14,22 @@ Ein Container, eine Datei als Datenbank, kein Node, kein Build. Läuft auf einem
 
 **Nur mal anschauen (5 Minuten, kein Server, kein Garmin-Konto nötig):**
 
+Vorher einmal prüfen, ob **Python 3.12 oder neuer** da ist — macOS bringt ab Werk
+nur 3.9 mit, und dann bricht der zweite Befehl mit `command not found` ab:
+
+```bash
+python3.12 --version || python3 --version
+```
+
+Kommt dabei etwas unter 3.12 heraus (oder gar nichts), erst nachinstallieren:
+
+| System | Befehl |
+|---|---|
+| macOS mit [Homebrew](https://brew.sh) | `brew install python@3.12` |
+| Ubuntu / Debian | `sudo apt install python3.12 python3.12-venv` |
+
+Warum 3.12: `garminconnect` verlangt es. Alles andere käme mit 3.10 aus.
+
 ```bash
 git clone https://github.com/SimonBassani/marathon-dashboard.git marathon-dashboard && cd marathon-dashboard
 

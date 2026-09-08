@@ -71,6 +71,31 @@
 </section>
 
 <section class="card">
+  <div class="wochen-kopf">
+    <h2>Diese Woche</h2>
+    <span class="pill">{{ week_compare.actual_km }} / {{ week_compare.planned_km }} km</span>
+  </div>
+  <div class="bar" role="img"
+       aria-label="{{ week_compare.actual_km }} von {{ week_compare.planned_km }} Kilometern gelaufen">
+    <span style="width: {{ [100, (week_compare.actual_km / week_compare.planned_km * 100) if week_compare.planned_km else 0] | min }}%"></span>
+  </div>
+
+  <ol class="wochentage">
+    {% for d in week_days %}
+    <li class="{{ 'heute' if d.is_today }} {{ 'vorbei' if d.is_past }} {{ 'leer' if not d.sessions }}">
+      <span class="wd">{{ d.label }}</span>
+      <span class="dn">{{ d.num }}</span>
+      {% for t in d.sessions %}
+      <span class="dot k-{{ t.kind }} {{ 'erledigt' if t.status == 'done' }}"
+            title="{{ labels.get(t.kind, t.kind) }}{% if t.distance_km %} · {{ t.distance_km }} km{% endif %}"></span>
+      {% endfor %}
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="muted small">{{ week_compare.done }} von {{ week_compare.planned_sessions }} Einheiten erledigt.</p>
+</section>
+
+<section class="card">
   <h2>Als Nächstes</h2>
   {% if today_sessions %}
   <ul class="sessions">

@@ -185,12 +185,37 @@ def home(request: Request):
     if not _require_login(request):
         return _redirect_to_login(request)
     state = analysis.training_state()
+
+    # Die laufende Woche auf einen Blick — Montag bis Sonntag, geplant gegen
+    # gelaufen. Steht bewusst auch hier und nicht nur auf dem Plan-Tab: das ist
+    # die Frage, die man sich morgens stellt.
+    heute = date.today()
+    ws = analysis.week_start(heute)
+    plan.match_completed(ws, heute)
+    week_by_day: dict[str, list[dict]] = {}
+    for s in plan.read_plan(ws, ws + timedelta(days=6)):
+        week_by_day.setdefault(s["day"], []).append(s)
+    week_days = [
+        {
+            "day": (d := (ws + timedelta(days=i))).isoformat(),
+            "label": ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")[i],
+            "num": d.day,
+            "is_today": d == heute,
+            "is_past": d < heute,
+            "sessions": week_by_day.get(d.isoformat(), []),
+        }
+        for i in range(7)
+    ]
+
     return templates.TemplateResponse(
         request, "home.html",
         {
             "s": state,
             "chart": views.volume_chart(state["weekly"]),
-            "today_sessions": plan.read_plan(date.today(), date.today() + timedelta(days=2)),
+            "today_sessions": plan.read_plan(heute, heute + timedelta(days=2)),
+            "week_days": week_days,
+            "week_compare": plan.week_compare(ws),
+            "labels": plan.KIND_LABELS,
             "last_sync": db.q1("SELECT * FROM sync_run ORDER BY id DESC LIMIT 1"),
             "nav": "home",
         },

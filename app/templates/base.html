@@ -19,6 +19,10 @@
 {% block content %}{% endblock %}
 </main>
 
+<!-- Fasst Rückmeldungen des Aktualisieren-Knopfes. Liegt in base.html, damit
+     jede Seite sie zeigen kann, und bleibt leer, solange nichts schiefgeht. -->
+<div id="syncmeldung" class="syncmeldung" role="status" aria-live="polite" hidden></div>
+
 <nav class="tabs">
   <a href="/" class="{{ 'on' if nav == 'home' }}">Form</a>
   <a href="/plan" class="{{ 'on' if nav == 'plan' }}">Plan</a>
