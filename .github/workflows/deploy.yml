@@ -1,0 +1,96 @@
+# Rollt bei jedem Push auf main auf den Server aus.
+#
+# Bewusst ohne jede fremde Action: nur `run:`-Schritte. Eine Action Dritter in
+# einem Workflow, der Zugriff auf einen Produktionsschlüssel hat, wäre genau die
+# Lieferketten-Abhängigkeit, die dieses Projekt sonst überall vermeidet.
+#
+# Voraussetzung sind fünf Secrets, die scripts/server-setup.sh am Ende ausgibt:
+#   DEPLOY_HOST, DEPLOY_USER, DEPLOY_PATH, DEPLOY_KEY, DEPLOY_KNOWN_HOSTS
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Von Hand auslösbar, falls ein Deploy nachgeholt werden muss.
+  workflow_dispatch:
+
+# NICHT pull_request oder pull_request_target: das Repo ist öffentlich. Sonst
+# könnte jeder per Fork-PR einen Lauf auslösen, der an die Secrets kommt.
+
+permissions:
+  contents: read
+
+# Zwei gleichzeitige Deploys würden sich beim docker compose build ins Gehege
+# kommen. Der neuere gewinnt, der ältere wird abgebrochen.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Läuft nur im Original-Repo, nie in einem Fork — dort fehlen die Secrets
+    # ohnehin, aber ein rot fehlschlagender Lauf bei jedem Fork ist unnötig.
+    if: github.repository == 'SimonBassani/marathon-dashboard'
+
+    steps:
+      - name: Zugang vorbereiten
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_KEY:-}" ] || [ -z "${DEPLOY_KNOWN_HOSTS:-}" ]; then
+            echo "::error::DEPLOY_KEY oder DEPLOY_KNOWN_HOSTS fehlt. Siehe docs/deploy.md."
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          umask 077
+          printf '%s\n' "$DEPLOY_KEY"         > ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Ausrollen
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PFAD: ${{ secrets.DEPLOY_PATH }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # Kein StrictHostKeyChecking=no: der Host-Schlüssel steht in
+          # known_hosts. Ein untergeschobener Server fliegt damit auf.
+          ssh -o StrictHostKeyChecking=yes -o ConnectTimeout=20 \
+              "$USER@$HOST" bash -seu <<REMOTE
+          cd "$PFAD"
+          git fetch --quiet origin main
+          git reset --quiet --hard "$SHA"
+          docker compose up -d --build
+          docker image prune -f --filter "until=168h" >/dev/null 2>&1 || true
+          REMOTE
+
+      - name: Nachprüfen, dass es wirklich läuft
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PFAD: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          # Ein Deploy, der durchläuft, aber eine tote App hinterlässt, ist ein
+          # fehlgeschlagener Deploy. Deshalb hier nachfassen statt hoffen.
+          for i in $(seq 1 20); do
+            if ssh -o StrictHostKeyChecking=yes "$USER@$HOST" \
+                 "cd '$PFAD' && docker compose exec -T app python -c \
+                  \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz',timeout=3).status==200 else 1)\"" \
+                 >/dev/null 2>&1; then
+              echo "App antwortet nach ${i} Versuchen."
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "::error::App antwortet nach dem Deploy nicht."
+          ssh -o StrictHostKeyChecking=yes "$USER@$HOST" \
+            "cd '$PFAD' && docker compose logs --tail 60 app" || true
+          exit 1
