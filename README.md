@@ -12,16 +12,33 @@ Ein Container, eine Datei als Datenbank, kein Node, kein Build. Läuft auf einem
 
 ## Schnellstart
 
-**Nur mal anschauen (5 Minuten, kein Server, kein Garmin-Konto nötig):**
+**Zwei Befehle, dann läuft es:**
 
-Vorher einmal prüfen, ob **Python 3.12 oder neuer** da ist — macOS bringt ab Werk
-nur 3.9 mit, und dann bricht der zweite Befehl mit `command not found` ab:
+```bash
+git clone https://github.com/SimonBassani/marathon-dashboard.git marathon-dashboard && cd marathon-dashboard
+./scripts/los.sh
+```
+
+Das Skript prüft die Python-Version, baut die Umgebung, installiert alles, fragt
+einmal, ob du Garmin verbinden willst, und startet. Beim ersten Mal dauert es
+ein bis zwei Minuten, danach vier Sekunden — es überspringt, was schon da ist.
+
+Dann [localhost:8000](http://localhost:8000) öffnen, Passwort `demo-passwort-1234`.
+
+Sagst du bei der Garmin-Frage Nein, läuft alles mit Demodaten — kein Konto nötig,
+nichts kaputtzumachen. Zugangsdaten kannst du später in der `.env` nachtragen.
+
+<details>
+<summary>Lieber von Hand? Die Einzelschritte</summary>
+
+Es braucht **Python 3.12 oder neuer** — macOS bringt ab Werk nur 3.9 mit, dann
+bricht der venv-Befehl mit `command not found` ab. Prüfen:
 
 ```bash
 python3.12 --version || python3 --version
 ```
 
-Kommt dabei etwas unter 3.12 heraus (oder gar nichts), erst nachinstallieren:
+Fehlt es, erst nachinstallieren:
 
 | System | Befehl |
 |---|---|
@@ -31,8 +48,6 @@ Kommt dabei etwas unter 3.12 heraus (oder gar nichts), erst nachinstallieren:
 Warum 3.12: `garminconnect` verlangt es. Alles andere käme mit 3.10 aus.
 
 ```bash
-git clone https://github.com/SimonBassani/marathon-dashboard.git marathon-dashboard && cd marathon-dashboard
-
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 
@@ -43,10 +58,19 @@ DB_PATH=./demo.db \
 APP_PASSWORD=demo-passwort-1234 \
 SECRET_KEY=$(python3 -c "import secrets;print(secrets.token_urlsafe(48))") \
 PUBLIC_URL=http://localhost:8000 \
-.venv/bin/uvicorn app.main:app --port 8000
+.venv/bin/uvicorn app.main:app --port 8000 --reload
 ```
 
-[localhost:8000](http://localhost:8000) öffnen, Passwort `demo-passwort-1234`.
+Zwei Dinge, die man dabei leicht übersieht:
+
+- **`--reload` gehört dazu.** Ohne das lädt Python den Code nur beim Start. Nach
+  einem `git pull` trifft dann neues Template auf alte Route, und die Seite
+  antwortet mit `Internal Server Error`, obwohl am Code nichts falsch ist.
+- **Die App liest `.env` nicht selbst** — das macht nur `docker compose` über
+  `env_file`. Beim lokalen Start die Datei vorher einlesen:
+  `set -a; . ./.env; set +a`
+
+</details>
 
 **Richtig aufsetzen:** die sechs Schritte weiter unten. Rechne mit 40 Minuten,
 davon 20 Warten auf DNS.
